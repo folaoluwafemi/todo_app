@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'todo_model.dart';
-import 'home_screen.dart';
+import 'db_helper.dart' as db_helper;
 
 
 class TodoBottomSheet extends StatefulWidget{
-  final Function fromParent;
+  final Function(TodoModel todo) fromParent;
   const TodoBottomSheet(this.fromParent, {Key? key}) : super(key: key);
 
   @override
@@ -50,9 +50,10 @@ class _TodoBottomSheetState extends State<TodoBottomSheet> {
                   },
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    todos.add(TodoModel(todo: todo, todoDone: false));
-                    widget.fromParent();
+                  onPressed: () async {
+                    TodoModel newTodo = TodoModel(todo: todo, todoDone: false);
+                    await db_helper.DbHelper.instance.insertIntoDatabase(newTodo.toMap());
+                    widget.fromParent(newTodo);
                     Navigator.of(context).pop();
                   },
                   child: const Text('Done'),
@@ -68,14 +69,15 @@ class _TodoBottomSheetState extends State<TodoBottomSheet> {
 
 class TodoListTile extends StatefulWidget {
   final TodoModel todo;
-  const TodoListTile(this.todo, {Key? key}) : super(key: key); //constructor
+  final Function(TodoModel todo)? updateTodo;
+  const TodoListTile(this.todo, {Key? key, this.updateTodo}) : super(key: key); //constructor
   @override
   _TodoListTileState createState() => _TodoListTileState();
 }
 
 class _TodoListTileState extends State<TodoListTile> {
 
-  _TodoListTileState();
+  bool todoChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +94,8 @@ class _TodoListTileState extends State<TodoListTile> {
 
   void updateCheckedBox(bool newChecked) {
     setState(() {
-      taskNumber = '${todos.length} tasks';
       widget.todo.set(newChecked);
+      widget.updateTodo!(widget.todo);
     });
   }
 }

@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
+
+import 'db_helper.dart' as db_helper;
 import 'todo_model.dart';
 import 'utils.dart';
 
-List<TodoModel> todos = [TodoModel(todo: 'this is a todo', todoDone: false)];
-String taskNumber = '${todos.length} tasks';
-bool todosAdded = false;
-
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({Key? key}) : super(key: key);
+  List<TodoModel> todos = [TodoModel(todo: 'this is a todo', todoDone: false)];
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String taskNumber = '';
+
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
-    taskNumber = '${todos.length} tasks';
+    // taskNumber = '${todos.length} tasks';
     super.didUpdateWidget(oldWidget);
   }
 
-  dynamic parentSetStateCallBack() {
-    setState(() {
-      taskNumber = '${todos.length} tasks';
-    });
+  @override
+  void initState() {
+    taskNumber = '${widget.todos.length} tasks';
+    initializeState();
+    super.initState();
   }
 
   @override
@@ -82,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     flex: 3,
                     child: Container(
+                      padding: const EdgeInsets.only(top: 18),
                       decoration: const BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.only(
@@ -91,10 +94,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Scrollable(
                         physics: const BouncingScrollPhysics(),
                         viewportBuilder: (context, viewPortOffset) {
-                          return ListView.builder(
-                            itemCount: todos.length,
-                            itemBuilder: (context, index) {
-                              return TodoListTile(todos[index]);
+                          return TodoeyList(
+                            widget.todos,
+                            intializeList: (newTodos) {
+                              widget.todos = newTodos;
+                              initializeStateAsync(newTodos);
                             },
                           );
                         },
@@ -114,9 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   showModalBottomSheet(
                     context: context,
                     builder: (context) {
-                      return TodoBottomSheet(() {
+                      return TodoBottomSheet((newTodo) async {
                         setState(() {
-                          taskNumber = '${todos.length} tasks';
+                          widget.todos.add(newTodo);
+                          initializeStateAsync(widget.todos);
+                          taskNumber = '${widget.todos.length} tasks';
                         });
                       });
                     },
@@ -127,6 +133,49 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  void initializeStateAsync(List<TodoModel> newTodosList) async {
+    widget.todos = await db_helper.DbHelper.instance.queryDatabase();
+    List<Map<String, Object?>> newList = [];
+    for (var element in newTodosList) {
+      newList.add(element.toMap());
+    }
+    (await db_helper.DbHelper.instance.insertMultipleIntoDatabase(newList));
+  }
+
+  void initializeState() {
+    setState(() {
+      initializeStateAsync(widget.todos);
+    });
+  }
+}
+
+class TodoeyList extends StatelessWidget {
+  final Function(List<TodoModel> todos)? intializeList;
+  final List<TodoModel> todos;
+
+  const TodoeyList(this.todos, {Key? key, this.intializeList})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: todos.length,
+      itemBuilder: (context, index) {
+        intializeList!(todos);
+        return TodoListTile(
+          todos[index],
+          updateTodo: (newTodo) {
+            for (var element in todos) {
+              if (element.todo == newTodo.todo) {
+                element = newTodo;
+              }
+            }
+          },
+        );
+      },
     );
   }
 }

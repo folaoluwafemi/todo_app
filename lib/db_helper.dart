@@ -50,6 +50,7 @@ class DbHelper {
         await txn.insert(
           todoTableName,
           element,
+          conflictAlgorithm: sqlite.ConflictAlgorithm.replace,
         );
       });
     }
