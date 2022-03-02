@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:todoey/shared_preference.dart';
 
 class TodoModel{
   final String? todo;
@@ -13,9 +14,20 @@ class TodoModel{
   //     db_helper.colFinished: _boolToString(todoDone!)
   //   };
   // }
-  // String _boolToString(bool boolean){
-  //   return (boolean) ? "true" : "false";
-  // }
+  static String boolToString(bool boolean){
+    return (boolean) ? "true" : "false";
+  }
+
+  static bool stringToBool(String boolean){
+    if(boolean == "true"){
+      return true;
+    } else if(boolean == "false"){
+      return false;
+    }
+    else{
+      return false;
+    }
+  }
 
   set(bool newValue){
     todoDone = newValue;
@@ -24,26 +36,41 @@ class TodoModel{
 
 
 class TodoListModel extends ChangeNotifier{
-  List<TodoModel> todos = [TodoModel(todo: "new todo"), TodoModel(todo: "another todo"), TodoModel(todo: "another other todo")];
-  TodoListModel();
 
+  var _myTodos = [TodoModel(todo: "new todo"), TodoModel(todo: "another todo"), TodoModel(todo: "another other todo")];
+  TodoListModel(){
+    getSavedTodos();
+  }
+
+  List<TodoModel> get todos {
+    getSavedTodos();
+    return _myTodos;
+  }
   int get todoLength {
     return todos.length;
   }
   void addTodo(TodoModel newTodo){
-    todos.add(newTodo);
+    MySharedPrefs.addTodo(newTodo);
+    getSavedTodos();
     notifyListeners();
   }
   void clearTodos(){
     todos.clear();
+    MySharedPrefs.deleteAll();
     notifyListeners();
   }
   void updateTodo(TodoModel todo, bool newValue){
-    todo.set(newValue);
+    MySharedPrefs.updateTodo(todo, newValue);
+    getSavedTodos();
     notifyListeners();
   }
-  void deleteTodo(TodoModel todo, int index){
-    todos.remove(todo);
+  void deleteTodo(TodoModel todo, int index) async {
+    MySharedPrefs.deleteTodo(todo);
+    getSavedTodos();
     notifyListeners();
+  }
+
+  void getSavedTodos() async {
+    _myTodos = await MySharedPrefs.getTodos();
   }
 }

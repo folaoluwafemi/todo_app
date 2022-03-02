@@ -41,7 +41,6 @@ class TodoBottomSheet extends StatelessWidget {
                       ),
                       onChanged: (value) {
                         todo = value;
-                        print(todo);
                       },
                       onSubmitted: (value) {
                         Provider.of<TodoListModel>(context, listen: false)
@@ -50,9 +49,6 @@ class TodoBottomSheet extends StatelessWidget {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        print(todo);
-                        // Provider.of<TodoListModel>(context, listen: false)
-                        //     .addTodo(TodoModel(todo: todo));
                         Navigator.of(context).pop();
                       },
                       child: const Text('Done'),
@@ -80,6 +76,7 @@ class TodoeyList extends StatelessWidget {
         return ListView.builder(
           itemCount: todoListModel.todos.length,
           itemBuilder: (context, index) {
+            TodoListModel().getSavedTodos();
             var todos = todoListModel.todos;
             return TodoListTile(
               (newCheckedValue) {
@@ -105,7 +102,7 @@ class TodoListTile extends StatefulWidget {
   final Function(bool newChecked) updateCheckedBox;
   final VoidCallback? deleteTodo;
 
-  TodoListTile(
+  const TodoListTile(
     this.updateCheckedBox,
     this.todo, {
     Key? key,
@@ -122,33 +119,31 @@ class _TodoListTileState extends State<TodoListTile> {
   //constructor
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: ListTile(
-        onTap: (){
-          setState(() {
-            longPressed = false;
-          });
-        },
-        onLongPress: () {
-          setState(() {
-            longPressed = true;
-          });
-        },
-        leading: (longPressed)
-            ? IconButton(
-                onPressed: widget.deleteTodo!,
-                icon: const Icon(Icons.delete),
-              )
-            : null,
-        title: Text(
-          widget.todo.todo!,
-          style: TextStyle(
-              decoration:
-                  widget.todo.todoDone! ? TextDecoration.lineThrough : null),
-        ),
-        trailing: TodoCheckedBox(widget.todo.todoDone!,
-            (newValue) => widget.updateCheckedBox(newValue!)),
+    return ListTile(
+      onTap: (){
+        setState(() {
+          longPressed = false;
+        });
+      },
+      onLongPress: () {
+        setState(() {
+          longPressed = true;
+        });
+      },
+      leading: (longPressed)
+          ? IconButton(
+              onPressed: widget.deleteTodo!,
+              icon: const Icon(Icons.delete),
+            )
+          : null,
+      title: Text(
+        widget.todo.todo!,
+        style: TextStyle(
+            decoration:
+                widget.todo.todoDone! ? TextDecoration.lineThrough : null),
       ),
+      trailing: TodoCheckedBox(widget.todo.todoDone!,
+          (newValue) => widget.updateCheckedBox(newValue!)),
     );
   }
 }

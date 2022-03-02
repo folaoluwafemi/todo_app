@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:todoey/home_screen.dart';
+import 'package:todoey/splash_screen.dart';
 import 'package:todoey/todo_model.dart';
 
 void main() {
@@ -13,8 +13,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => TodoListModel(),
-      child: const HomeScreen(),
+      create: (context) {
+        TodoListModel().getSavedTodos();
+        return TodoListModel();
+      },
+      child: const SplashScreen(),
     );
   }
 }

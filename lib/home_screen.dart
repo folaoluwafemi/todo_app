@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'todo_model.dart';
@@ -7,17 +8,23 @@ import 'utils.dart';
 String taskNumber = '12 tasks';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({Key? key}) : super(key: key) {
+    TodoListModel().getSavedTodos();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: LayoutBuilder(
         builder: (context, constraints) {
           return SafeArea(
             child: Scaffold(
               resizeToAvoidBottomInset: false,
               appBar: AppBar(
+                systemOverlayStyle: const SystemUiOverlayStyle(
+                  statusBarColor: Colors.lightBlueAccent
+                ),
                 backgroundColor: Colors.lightBlueAccent,
                 actions: [
                   IconButton(
@@ -103,7 +110,7 @@ class HomeScreen extends StatelessWidget {
                   showModalBottomSheet(
                     context: context,
                     builder: (context) {
-                      return TodoBottomSheet();
+                      return const TodoBottomSheet();
                     },
                   );
                 },
