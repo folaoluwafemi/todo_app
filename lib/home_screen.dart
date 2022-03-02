@@ -1,32 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'db_helper.dart' as db_helper;
 import 'todo_model.dart';
 import 'utils.dart';
 
-class HomeScreen extends StatefulWidget {
-  HomeScreen({Key? key}) : super(key: key);
-  List<TodoModel> todos = [TodoModel(todo: 'this is a todo', todoDone: false)];
+String taskNumber = '12 tasks';
 
-  @override
-  _HomeScreenState createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String taskNumber = '';
-
-  @override
-  void didUpdateWidget(covariant HomeScreen oldWidget) {
-    // taskNumber = '${todos.length} tasks';
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void initState() {
-    taskNumber = '${widget.todos.length} tasks';
-    initializeState();
-    super.initState();
-  }
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +16,24 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, constraints) {
           return SafeArea(
             child: Scaffold(
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(
+                backgroundColor: Colors.lightBlueAccent,
+                actions: [
+                  IconButton(
+                      onPressed: () {
+                        Provider.of<TodoListModel>(context, listen: false)
+                            .clearTodos();
+                      },
+                      icon: const Icon(Icons.delete))
+                ],
+                shadowColor: Colors.transparent,
+              ),
               backgroundColor: Colors.lightBlueAccent,
               body: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.only(left: 20, top: 60),
+                    padding: const EdgeInsets.only(left: 20, top: 30),
                     color: Colors.lightBlueAccent,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 8.0),
                           child: Text(
-                            taskNumber,
+                            '${Provider.of<TodoListModel>(context).todoLength} Todos',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -86,21 +80,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.only(top: 18),
                       decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          )),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
                       child: Scrollable(
                         physics: const BouncingScrollPhysics(),
                         viewportBuilder: (context, viewPortOffset) {
-                          return TodoeyList(
-                            widget.todos,
-                            intializeList: (newTodos) {
-                              widget.todos = newTodos;
-                              initializeStateAsync(newTodos);
-                            },
-                          );
+                          return const TodoeyList();
                         },
                       ),
                     ),
@@ -111,20 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(Icons.add),
                 backgroundColor: Colors.lightBlueAccent,
                 onPressed: () {
-                  // Navigator.of(context)
-                  //     .push(MaterialPageRoute(builder: (context) {
-                  //   return const TodoBottomSheet();
-                  // }));
                   showModalBottomSheet(
                     context: context,
                     builder: (context) {
-                      return TodoBottomSheet((newTodo) async {
-                        setState(() {
-                          widget.todos.add(newTodo);
-                          initializeStateAsync(widget.todos);
-                          taskNumber = '${widget.todos.length} tasks';
-                        });
-                      });
+                      return TodoBottomSheet();
                     },
                   );
                 },
@@ -133,49 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-    );
-  }
-
-  void initializeStateAsync(List<TodoModel> newTodosList) async {
-    widget.todos = await db_helper.DbHelper.instance.queryDatabase();
-    List<Map<String, Object?>> newList = [];
-    for (var element in newTodosList) {
-      newList.add(element.toMap());
-    }
-    (await db_helper.DbHelper.instance.insertMultipleIntoDatabase(newList));
-  }
-
-  void initializeState() {
-    setState(() {
-      initializeStateAsync(widget.todos);
-    });
-  }
-}
-
-class TodoeyList extends StatelessWidget {
-  final Function(List<TodoModel> todos)? intializeList;
-  final List<TodoModel> todos;
-
-  const TodoeyList(this.todos, {Key? key, this.intializeList})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: todos.length,
-      itemBuilder: (context, index) {
-        intializeList!(todos);
-        return TodoListTile(
-          todos[index],
-          updateTodo: (newTodo) {
-            for (var element in todos) {
-              if (element.todo == newTodo.todo) {
-                element = newTodo;
-              }
-            }
-          },
-        );
-      },
     );
   }
 }

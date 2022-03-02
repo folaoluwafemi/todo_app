@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'todo_model.dart';
-import 'db_helper.dart' as db_helper;
 
+class TodoBottomSheet extends StatelessWidget {
+  const TodoBottomSheet({Key? key}) : super(key: key);
 
-class TodoBottomSheet extends StatefulWidget{
-  final Function(TodoModel todo) fromParent;
-  const TodoBottomSheet(this.fromParent, {Key? key}) : super(key: key);
-
-  @override
-  _TodoBottomSheetState createState() => _TodoBottomSheetState();
-}
-
-class _TodoBottomSheetState extends State<TodoBottomSheet> {
-
-  String todo = '';
   @override
   Widget build(BuildContext context) {
     return BottomSheet(
-      onClosing: () {
-      },
+      onClosing: () {},
       builder: (context) {
         return Container(
           color: const Color(0xff757575),
@@ -30,35 +21,45 @@ class _TodoBottomSheetState extends State<TodoBottomSheet> {
                 topLeft: Radius.circular(20),
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Add Todo',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.blue, fontSize: 25),
-                ),
-                TextField(
-                  autofocus: true,
-                  autocorrect: true,
-                  style: const TextStyle(
-                    fontSize: 25,
-                  ),
-                  onChanged: (value){
-                    todo = value;
-                  },
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    TodoModel newTodo = TodoModel(todo: todo, todoDone: false);
-                    await db_helper.DbHelper.instance.insertIntoDatabase(newTodo.toMap());
-                    widget.fromParent(newTodo);
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Done'),
-                ),
-              ],
+            child: Scrollable(
+              viewportBuilder: (context, _) {
+                String todo = '';
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Add Todo',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.blue, fontSize: 25),
+                    ),
+                    TextField(
+                      autofocus: true,
+                      autocorrect: true,
+                      style: const TextStyle(
+                        fontSize: 25,
+                      ),
+                      onChanged: (value) {
+                        todo = value;
+                        print(todo);
+                      },
+                      onSubmitted: (value) {
+                        Provider.of<TodoListModel>(context, listen: false)
+                            .addTodo(TodoModel(todo: todo));
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        print(todo);
+                        // Provider.of<TodoListModel>(context, listen: false)
+                        //     .addTodo(TodoModel(todo: todo));
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         );
@@ -67,36 +68,62 @@ class _TodoBottomSheetState extends State<TodoBottomSheet> {
   }
 }
 
-class TodoListTile extends StatefulWidget {
-  final TodoModel todo;
-  final Function(TodoModel todo)? updateTodo;
-  const TodoListTile(this.todo, {Key? key, this.updateTodo}) : super(key: key); //constructor
+class TodoeyList extends StatelessWidget {
+  const TodoeyList({
+    Key? key,
+  }) : super(key: key);
+
   @override
-  _TodoListTileState createState() => _TodoListTileState();
+  Widget build(BuildContext context) {
+    return Consumer<TodoListModel>(
+      builder: (context, todoListModel, child) {
+        return ListView.builder(
+          itemCount: todoListModel.todos.length,
+          itemBuilder: (context, index) {
+            var todos = todoListModel.todos;
+            return TodoListTile(
+              (newCheckedValue) {
+                todoListModel.updateTodo(
+                  todos[index],
+                  newCheckedValue,
+                );
+              },
+              todos[index],
+              deleteTodo: (){
+                todoListModel.deleteTodo(todos[index], index);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
-class _TodoListTileState extends State<TodoListTile> {
+class TodoListTile extends StatelessWidget {
+  final TodoModel todo;
+  final Function(bool newChecked) updateCheckedBox;
+  final VoidCallback? deleteTodo;
 
-  bool todoChecked = false;
+  const TodoListTile(this.updateCheckedBox, this.todo,
+      {Key? key, this.deleteTodo})
+      : super(key: key); //constructor
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      leading: (todo.todoDone!) ? IconButton(
+        onPressed: deleteTodo!,
+        icon: const Icon(Icons.delete),
+      ): null,
       title: Text(
-        widget.todo.todo!,
-        style:
-        TextStyle(decoration: widget.todo.todoDone! ? TextDecoration.lineThrough : null),
+        todo.todo!,
+        style: TextStyle(
+            decoration: todo.todoDone! ? TextDecoration.lineThrough : null),
       ),
-      trailing:
-      TodoCheckedBox(widget.todo.todoDone!, (newValue) => updateCheckedBox(newValue!)),
+      trailing: TodoCheckedBox(
+          todo.todoDone!, (newValue) => updateCheckedBox(newValue!)),
     );
-  }
-
-  void updateCheckedBox(bool newChecked) {
-    setState(() {
-      widget.todo.set(newChecked);
-      widget.updateTodo!(widget.todo);
-    });
   }
 }
 
