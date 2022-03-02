@@ -89,7 +89,7 @@ class TodoeyList extends StatelessWidget {
                 );
               },
               todos[index],
-              deleteTodo: (){
+              deleteTodo: () {
                 todoListModel.deleteTodo(todos[index], index);
               },
             );
@@ -100,29 +100,55 @@ class TodoeyList extends StatelessWidget {
   }
 }
 
-class TodoListTile extends StatelessWidget {
+class TodoListTile extends StatefulWidget {
   final TodoModel todo;
   final Function(bool newChecked) updateCheckedBox;
   final VoidCallback? deleteTodo;
 
-  const TodoListTile(this.updateCheckedBox, this.todo,
-      {Key? key, this.deleteTodo})
-      : super(key: key); //constructor
+  TodoListTile(
+    this.updateCheckedBox,
+    this.todo, {
+    Key? key,
+    this.deleteTodo,
+  }) : super(key: key);
 
   @override
+  State<TodoListTile> createState() => _TodoListTileState();
+}
+
+class _TodoListTileState extends State<TodoListTile> {
+  bool longPressed = false;
+
+  //constructor
+  @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: (todo.todoDone!) ? IconButton(
-        onPressed: deleteTodo!,
-        icon: const Icon(Icons.delete),
-      ): null,
-      title: Text(
-        todo.todo!,
-        style: TextStyle(
-            decoration: todo.todoDone! ? TextDecoration.lineThrough : null),
+    return Container(
+      child: ListTile(
+        onTap: (){
+          setState(() {
+            longPressed = false;
+          });
+        },
+        onLongPress: () {
+          setState(() {
+            longPressed = true;
+          });
+        },
+        leading: (longPressed)
+            ? IconButton(
+                onPressed: widget.deleteTodo!,
+                icon: const Icon(Icons.delete),
+              )
+            : null,
+        title: Text(
+          widget.todo.todo!,
+          style: TextStyle(
+              decoration:
+                  widget.todo.todoDone! ? TextDecoration.lineThrough : null),
+        ),
+        trailing: TodoCheckedBox(widget.todo.todoDone!,
+            (newValue) => widget.updateCheckedBox(newValue!)),
       ),
-      trailing: TodoCheckedBox(
-          todo.todoDone!, (newValue) => updateCheckedBox(newValue!)),
     );
   }
 }
